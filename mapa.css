@@ -1,0 +1,49 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap');
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #f5ece0;
+  background-image:
+    radial-gradient(at 12% 12%, #fef8ed 0%, transparent 55%),
+    radial-gradient(at 88% 88%, #dfd0be 0%, transparent 55%),
+    radial-gradient(at 88% 12%, #f7eddf 0%, transparent 50%),
+    radial-gradient(at 12% 88%, #e8dccf 0%, transparent 50%);
+  color: #1c1c2e;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  text-align: center;
+  padding: 32px 24px 10px;
+  flex-shrink: 0;
+}
+
+h1 {
+  font-size: 1.7rem;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  color: #1c1c2e;
+  line-height: 1.2;
+}
+
+p.sub {
+  margin-top: 8px;
+  font-size: 0.9rem;
+  font-weight: 300;
+  color: #b5aca0;
+  letter-spacing: 0.1px;
+}
+
+#map {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+}
