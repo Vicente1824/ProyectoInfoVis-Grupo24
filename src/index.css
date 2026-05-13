@@ -1,0 +1,22 @@
+body {
+    background-color: #F4F1EA;
+    min-height: 100vh;
+}
+
+.navbar, 
+.navbar-menu, 
+.navbar-start, 
+.navbar-end {
+    background-color: #262626 !important;
+}
+
+.navbar-item, 
+.navbar-link {
+    color: #F4F1EA !important; 
+}
+
+.navbar-item .title,
+.navbar-item h2 {
+    color: #F4F1EA !important;
+}
+
