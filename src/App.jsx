@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import * as mapUtils from './mapUtils';
 
 import Selector from './Selector';
@@ -85,6 +85,9 @@ function App() {
   const [dimension, setDimension] = useState('total'); 
   const [subGroup, setSubGroup] = useState('general');
 
+  // REFERENCIA AL AUDIO: Se crea una sola vez
+  const audioRef = useRef(null);
+  
   // Esto carga el GeoJSON al montar el componente. Solo se hace una vez.
   useEffect(() => {
     const url = 'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_10m_admin_1_states_provinces.geojson';
@@ -97,6 +100,42 @@ function App() {
         setGeoJson(filtered);
       });
   }, []);
+
+  useEffect(() => {
+    // Inicializamos el audio
+    const audioPath = `audio_voces.m4a`;
+    const audio = new Audio(audioPath);
+    audio.loop = true;
+    audio.volume = 0; // Empezamos en silencio
+    audioRef.current = audio;
+
+    // Limpieza al desmontar el componente
+    return () => {
+      audio.pause();
+      audioRef.current = null;
+    };
+  }, []);
+
+  // Función para manejar el volumen
+  const updateVolume = (val) => {
+    if (audioRef.current) {
+      // Si es la primera vez, intentamos darle Play (el navegador requiere interacción)
+      if (audioRef.current.paused) {
+        audioRef.current.play();
+      }
+      
+      const normalizedVolume = (val - 50) / 50;
+      const targetVolume = Math.min(Math.max(normalizedVolume, 0), 1);
+      
+      audioRef.current.volume = targetVolume;
+    }
+  };
+
+  const silence = () => {
+    if (audioRef.current) {
+      audioRef.current.volume = 0;
+    }
+  };
 
   // Generar trazos solo cuando cambia el GeoJSON o el filtro
   const traces = useMemo(() => {
@@ -194,8 +233,11 @@ function App() {
             onHover={(data) => {
               const point = data.points[0];
               if (point && point.z !== undefined) {
-                playSound(point.z);
+                updateVolume(point.z);
               }
+            }}
+            onUnhover={() => {
+              silence(); // Al salir de una región, volumen 0
             }}
           />
         )}
