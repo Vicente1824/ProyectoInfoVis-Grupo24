@@ -102,6 +102,36 @@ function App() {
   }, []);
 
   useEffect(() => {
+    if (window.Protobject) {
+      // Componente fantasma para mantener la conexión activa
+      new window.Protobject.Lamp({ width: "0px", height: "0px", top: "-1000px" });
+
+      window.Protobject.Core.onReceived((message) => {
+        const markerId = String(message);
+        
+        // Mapeo directo de ID a configuración del mapa
+        switch (markerId) {
+          case "1":
+            setDimension('sexo');
+            setSubGroup('hombre');
+            break;
+          case "2":
+            setDimension('sexo');
+            setSubGroup('mujer');
+            break;
+          case "3":
+            setDimension('socioeconomico');
+            setSubGroup('alta');
+            break;
+          // Añade más casos según los IDs de tus marcadores impresos
+          default:
+            console.log("Marcador no mapeado:", markerId);
+        }
+      });
+    }
+  }, []);
+
+  useEffect(() => {
     // Inicializamos el audio
     const audioPath = `audio_voces.m4a`;
     const audio = new Audio(audioPath);

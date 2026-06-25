@@ -20,3 +20,9 @@ body {
     color: #F4F1EA !important;
 }
 
+/* Rescatar el menú de Protobject de la invisibilidad de Bulma */
+div.dropdown-menu[style*="z-index: 10000001"] {
+    display: block !important;
+    visibility: visible !important;
+    left: auto !important; 
+}
