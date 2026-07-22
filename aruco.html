@@ -4,85 +4,40 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Detector ArUco</title>
-    
-    <script src="https://app.protobject.com/framework/p.js"></script>
-    <script src="./config.js"></script>
-
     <style>
-      body {
-        margin: 0;
-        background-color: #262626;
-        color: white;
-        font-family: sans-serif;
-        text-align: center;
-      }
-
-      /* Contenedor superior para el texto */
-      #header {
-        height: 100px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        background-color: #1a1a1a;
-        border-bottom: 2px solid #333;
-      }
-
+      body { margin: 0; background-color: #262626; color: white; font-family: sans-serif; text-align: center; }
+      #header { height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; background-color: #1a1a1a; }
       h2 { margin: 0; font-size: 1.2rem; color: #aaa; }
       #last-id { font-size: 2.5rem; font-weight: bold; color: #00ff00; margin-top: 5px; }
     </style>
   </head>
   <body>
-    
+    <script src="https://app.protobject.com/framework/p.js"></script>
+    <script src="./config.js"></script>
+
     <div id="header">
       <h2>Último ID Detectado</h2>
       <div id="last-id">-</div>
     </div>
 
     <script>
-      setTimeout(() => {
-        if (typeof Protobject === 'undefined' || !Protobject.Aruco) return;
+      const camWidth = Math.min(window.innerWidth - 40, 400); 
+      const camHeight = camWidth * 0.75; 
+      const camLeft = (window.innerWidth - camWidth) / 2;
 
-        const lastIdElement = document.getElementById('last-id');
+      Protobject.Aruco.start(200, 0);
+      Protobject.Aruco.showPreview({ top: 130, left: camLeft, width: camWidth, height: camHeight });
 
-        // Calculamos un tamaño dinámico para la cámara (más chica y centrada)
-        // Tomamos el ancho de la pantalla menos un margen, máximo 400px
-        const camWidth = Math.min(window.innerWidth - 40, 400); 
-        const camHeight = camWidth * 0.75; // Proporción clásica 4:3
-        const camLeft = (window.innerWidth - camWidth) / 2;
-        const camTop = 130; // La posicionamos debajo del header
-
-        try {
-          Protobject.Aruco.start(200, 0);
+      Protobject.Aruco.onData(function (data) {
+        const markerIds = Object.keys(data);
+        if (markerIds.length > 0) {
+          const detectedId = markerIds[0];
           
-          // Inyectamos el video con las nuevas dimensiones matemáticas
-          Protobject.Aruco.showPreview({ 
-            top: camTop, 
-            left: camLeft, 
-            width: camWidth, 
-            height: camHeight 
-          });
-
-          Protobject.Aruco.onData((data) => {
-            const markerIds = Object.keys(data);
-            
-            if (markerIds.length > 0) {
-              const detectedId = markerIds[0];
-              
-              // Actualizamos el texto en pantalla
-              lastIdElement.innerText = detectedId;
-
-              // Enviamos la data al mapa en React
-              Protobject.Core.send(detectedId).to("index.html");
-            }
-            // Si no detecta nada, no hacemos un "else". 
-            // Así el texto mantiene en pantalla el último ID leído.
-          });
-
-        } catch (error) {
-          console.error("Fallo al iniciar la cámara:", error);
+          document.getElementById('last-id').innerText = detectedId;
+          
+          Protobject.Core.send(detectedId).to("index.html");
         }
-      }, 1500);
+      });
     </script>
   </body>
 </html>

@@ -66,19 +66,11 @@ const menuConfig = {
 const descripcionesDimension = {
   total: "Visión general de la participación cultural a nivel nacional. Refleja el porcentaje total de personas que han participado en al menos una actividad cultural en los últimos 12 meses en cada región.",
   sexo: "El gráfico revela que la presencia de ambos sexos se mantiene constante en todo el país, pero notarás que la proporción de mujeres es consistentemente más alta.",
-  edad: "Explora qué grupo etario concentra mayor actividad. Revisa como la participación alcanza su punto más alto en los rangos jóvenes y decae gradualmente en los adultos mayores.",
-  socioeconomico: "Explora qué grupos socioeconómicos concentran la mayor actividad. Revisa como influye este nivel en la participación y compara la diferencia de las tres clases.",
-  educacion: "Revisa qué nivel educacional concentra la mayor actividad. Notarás un incremento significativo a medida que avanza la escolaridad; esto refleja como la autonomía y el interés de los jóvenes impulsan una mayor participación.",
-  discapacidad: "Explora la participación según la presencia de personas en situación de discapacidad en el hogar. Notarás un contraste sutil pero revelador: una brecha que nos invita a reflexionar sobre las barreras de accesibilidad y los desafíos de inclusión que aún persisten.",
-  mayores: "Analiza cómo la composición familiar impacta la actividad cultural. Los datos revelan una menor participación en hogares que conviven con personas mayores, evidenciando cómo las responsabilidades de cuidado suelen restringir el tiempo libre y la capacidad de participar."
-};
-
-const getRegionDataAll = (regionId, dimension) => {
-  const options = menuConfig[dimension].options;
-  return options.map(opt => ({
-    label: opt.label,
-    valor: dataSets[opt.value][regionId]?.valor || 0
-  }));
+  edad: "Explora que grupo etario concentran mayor actividad. Revisa como la participación alcanza su punto más alto en los rangos jóvenes y decae gradualmente en los adultos mayores.",
+  socioeconomico: "Explora que grupos socioeconómicos concentran la mayor actividad. Revisa como influye este nivel en la participación y compara la diferencia de las tres clases.",
+  educacion: "Revisa que nivel educacional concentra la mayor actividad. Notarás un incremento significativo a medida que avanza la escolaridad; esto refleja como la autonomía y el interés de los jóvenes impulsan una mayor participación.",
+  discapacidad: "Revisa la distribución entre hogares con y sin discapacidad. Verás que existe un pequeño contraste en la participación, visibilizando los sutiles desafíos de inclusión que aún persisten.",
+  mayores: "Explora cómo influye la composición familiar en la actividad. Se observa una mayor participación en los hogares que no cuentan con personas mayores, lo que suele reflejar como las responsabilidades de cuidado impactan la capacidad de participar."
 };
 
 const playSound = (value) => {
@@ -104,9 +96,7 @@ function App() {
   const [subGroup, setSubGroup] = useState('general');
 
   // REFERENCIA AL AUDIO: Se crea una sola vez
-  const [audioGrillos, setAudioGrillos] = useState(null);
-  const [audioMurmullo, setAudioMurmullo] = useState(null);
-  const [audioRisas, setAudioRisas] = useState(null);
+  const audioRef = useRef(null);
   
   // Esto carga el GeoJSON al montar el componente. Solo se hace una vez.
   useEffect(() => {
@@ -163,39 +153,39 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const grillos = new Audio(`${import.meta.env.BASE_URL}grillos.mp3`);
-    const murmullo = new Audio(`${import.meta.env.BASE_URL}murmullo.mp3`);
-    const risas = new Audio(`${import.meta.env.BASE_URL}risas.mp3`);
-    
-    // Configuramos todos para que sean un loop continuo
-    [grillos, murmullo, risas].forEach(a => { a.loop = true; a.volume = 0; });
-    
-    setAudioGrillos(grillos);
-    setAudioMurmullo(murmullo);
-    setAudioRisas(risas);
+    // Inicializamos el audio
+    const audioPath = `audio_voces.m4a`;
+    const audio = new Audio(audioPath);
+    audio.loop = true;
+    audio.volume = 0; // Empezamos en silencio
+    audioRef.current = audio;
 
+    // Limpieza al desmontar el componente
     return () => {
-      [grillos, murmullo, risas].forEach(a => { a.pause(); });
+      audio.pause();
+      audioRef.current = null;
     };
   }, []);
 
-  const updateSonification = (valor) => {
-    if (!audioGrillos || !audioMurmullo || !audioRisas) return;
-
-    if (audioGrillos.paused) {
-      audioGrillos.play(); audioMurmullo.play(); audioRisas.play();
+  // Función para manejar el volumen
+  const updateVolume = (val) => {
+    if (audioRef.current) {
+      // Si es la primera vez, intentamos darle Play (el navegador requiere interacción)
+      if (audioRef.current.paused) {
+        audioRef.current.play();
+      }
+      
+      const normalizedVolume = (val - 50) / 50;
+      const targetVolume = Math.min(Math.max(normalizedVolume, 0), 1);
+      
+      audioRef.current.volume = targetVolume;
     }
+  };
 
-    // 1. Grillos (Alto en valores bajos)
-    audioGrillos.volume = valor < 50 ? (1 - valor / 50) : 0;
-    
-    // 2. Murmullos (Alto en el rango medio 50-75)
-    // Pico en 60-70%, baja en valores muy bajos o muy altos
-    const m = Math.max(0, 1 - Math.abs(valor - 65) / 35);
-    audioMurmullo.volume = m;
-
-    // 3. Risas/Evento (Alto en valores > 75)
-    audioRisas.volume = valor > 60 ? (valor - 60) / 40 : 0;
+  const silence = () => {
+    if (audioRef.current) {
+      audioRef.current.volume = 0;
+    }
   };
 
   // Generar trazos solo cuando cambia el GeoJSON o el filtro
@@ -287,38 +277,24 @@ function App() {
         </h2>
       </section>
       <div className="section pt-0">
+        {/* Quitamos is-vcentered para que la columna izquierda pueda estirarse en todo el alto disponible */}
         <div className="columns is-desktop">
           
-          
+          {/* 2. SOLUCIÓN: Hacemos la columna más angosta (is-3 es el 25% del ancho) */}
           <div className="column is-3">
             <div 
-              className="box has-background-white-ter is-flex is-flex-direction-column p-5" 
+              className="box has-background-white-ter is-flex is-flex-direction-column is-justify-content-center p-5" 
               style={{ height: '100%', borderLeft: '5px solid #eda845' }}
             >
-              {hoveredRegion ? (
-                <div>
-                  <p className="heading has-text-grey">{hoveredRegion.nombre}</p>
-                  <h3 className="title is-4">Desglose {menuConfig[dimension].label}</h3>
-                  
-                  {getRegionDataAll(hoveredRegion.id, dimension).map(item => (
-                    <div key={item.label} className="mb-4">
-                      <div className="is-flex is-justify-content-space-between mb-1">
-                        <span className="is-size-7">{item.label}</span>
-                        <span className="has-text-weight-bold">{item.valor}%</span>
-                      </div>
-                      <progress className="progress is-info is-small" value={item.valor} max="100" />
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div>
-                  <p className="heading has-text-grey">{menuConfig[dimension].label}</p>
-                  <h3 className="title is-4">{currentSubGroupLabel}</h3>
-                  <p className="is-size-6">{descripcionesDimension[dimension]}</p>
-                </div>
-              )}
+              <p className="heading has-text-grey">{menuConfig[dimension].label}</p>
+              <h3 className="title is-4">{currentSubGroupLabel}</h3>
+              <p className="is-size-6" style={{ lineHeight: '1.6' }}>
+                {descripcionesDimension[dimension]}
+              </p>
             </div>
           </div>
+
+          {/* El resto del espacio (75%) lo toman los mapas */}
           <div className="column is-9" style={{ height: '75vh' }}>
             {!geoJson ? (
               <div className="has-text-centered pt-6">Cargando datos geográficos...</div>
@@ -333,17 +309,14 @@ function App() {
                   const point = data.points[0];
                   if (point && point.location) {
                     const info = dataSets[subGroup][point.location];
-                    // Agregamos este if(info) por seguridad
-                    if (info) {
-                      setHoveredRegion({ id: point.location, nombre: info.nombre });
-                      updateSonification(info.valor);
-                    }
+                    const diff = (info.valor - parseFloat(promedioNacional)).toFixed(1);
+                    setHoveredRegion({ ...info, diff: diff > 0 ? `+${diff}` : diff });
+                    updateVolume(info.valor);
                   }
                 }}
                 onUnhover={() => {
                   setHoveredRegion(null);
-                  // Función para silenciar los 3
-                  [audioGrillos, audioMurmullo, audioRisas].forEach(a => a && (a.volume = 0));
+                  silence();
                 }}
               />
             )}
